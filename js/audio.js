@@ -221,8 +221,79 @@ export class RaceAudio {
     const t = this.ctx.currentTime;
     this.crowdGain.gain.cancelScheduledValues(t);
     this.crowdGain.gain.setValueAtTime(this.crowdGain.gain.value, t);
-    this.crowdGain.gain.linearRampToValueAtTime(0.08, t + 0.2);
-    this.crowdGain.gain.linearRampToValueAtTime(0.02, t + 2.5);
+    this.crowdGain.gain.linearRampToValueAtTime(0.1, t + 0.15);
+    this.crowdGain.gain.linearRampToValueAtTime(0.045, t + 1.2);
+    this.crowdGain.gain.linearRampToValueAtTime(0.018, t + 3.2);
+
+    // Extra yell bursts (layered noise whoops)
+    for (let i = 0; i < 4; i++) {
+      const n = this.ctx.createBufferSource();
+      n.buffer = this._noiseBuffer(0.35);
+      const f = this.ctx.createBiquadFilter();
+      f.type = "bandpass";
+      f.frequency.value = 600 + Math.random() * 900;
+      f.Q.value = 0.6;
+      const g = this.ctx.createGain();
+      const start = t + i * 0.12;
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(0.06 + Math.random() * 0.04, start + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + 0.35);
+      n.connect(f);
+      f.connect(g);
+      g.connect(this.master);
+      n.start(start);
+      n.stop(start + 0.4);
+    }
+  }
+
+  /**
+   * Crowd swell + spoken chant: "Go CJ!" / "Go Dylan!" etc.
+   * Uses Web Speech API (works on phone browsers over https).
+   */
+  chant(who) {
+    if (!this.enabled) return;
+    this.cheer();
+
+    const name = who === "Dylan" || who === "dylan" ? "Dylan" : "CJ";
+    const lines = [
+      `Go ${name}!`,
+      `Let's go ${name}!`,
+      `${name}! ${name}!`,
+      `Go ${name} go!`,
+      `Come on ${name}!`,
+    ];
+    const text = lines[(Math.random() * lines.length) | 0];
+
+    try {
+      if (!("speechSynthesis" in window)) return;
+      // Don't stomp mid-cheer every time — cancel only if queued backlog
+      if (speechSynthesis.pending) speechSynthesis.cancel();
+
+      const u = new SpeechSynthesisUtterance(text);
+      u.volume = 0.9;
+      u.rate = 1.05 + Math.random() * 0.15;
+      u.pitch = 0.95 + Math.random() * 0.35;
+      u.lang = "en-US";
+
+      // Prefer a punchier English voice when available
+      const voices = speechSynthesis.getVoices?.() || [];
+      const pick =
+        voices.find((v) => /en(-|_)US/i.test(v.lang) && /male|david|mark|google/i.test(v.name)) ||
+        voices.find((v) => /en/i.test(v.lang)) ||
+        null;
+      if (pick) u.voice = pick;
+
+      speechSynthesis.speak(u);
+    } catch (err) {
+      console.warn("Chant speech failed:", err);
+    }
+  }
+
+  /** Random Go CJ / Go Dylan */
+  randomChant() {
+    const who = Math.random() < 0.55 ? "CJ" : "Dylan";
+    this.chant(who);
+    return who;
   }
 
   stopAll() {
@@ -230,6 +301,10 @@ export class RaceAudio {
     try {
       if (this.engineGain) this.engineGain.gain.setTargetAtTime(0.0001, this.ctx.currentTime, 0.1);
       if (this.skidGain) this.skidGain.gain.setTargetAtTime(0.0001, this.ctx.currentTime, 0.05);
+      if (this.crowdGain) this.crowdGain.gain.setTargetAtTime(0.0001, this.ctx.currentTime, 0.1);
+    } catch (_) {}
+    try {
+      if ("speechSynthesis" in window) speechSynthesis.cancel();
     } catch (_) {}
     this.enabled = false;
   }

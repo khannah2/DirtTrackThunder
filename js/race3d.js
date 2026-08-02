@@ -890,6 +890,8 @@ export class RaceSession {
     this.dust = null;
     this.composer = null;
     this._disposed = false;
+    this._cheerTimer = 8 + Math.random() * 6;
+    this._lastPassCheerAt = 0;
     // Phone tilt / accelerometer steering
     this.tilt = {
       enabled: false,
@@ -931,10 +933,15 @@ export class RaceSession {
 
   async greenFlag() {
     await this.audio.resume();
+    // Warm up voices list (Chrome loads async)
+    try {
+      speechSynthesis?.getVoices?.();
+    } catch (_) {}
     this.state = "countdown";
     this.countdown = 3;
     this.countdownTimer = 1;
     this.audio.beep("count");
+    this._cheerTimer = 5 + Math.random() * 4;
     if (this.opts.onCountdown) this.opts.onCountdown(3);
   }
 
@@ -1771,6 +1778,8 @@ export class RaceSession {
     if (this.state === "finished") return;
     this.state = "finished";
     this.audio.cheer();
+    if (this._playerPlace() === 1) this.audio.chant("CJ");
+    else if (Math.random() < 0.5) this.audio.randomChant();
     const standings = this._standings();
     const place = this._playerPlace();
     this._flash(place === 1 ? "WINNER!" : `${place}${this._ord(place).toUpperCase()} PLACE`);
@@ -1824,6 +1833,43 @@ export class RaceSession {
     this.audio.update(sp, this.player.throttle, slip, onTrack(this.player.x, this.player.y));
   }
 
+  /** Occasional grandstand chants: Go CJ / Go Dylan */
+  _updateCrowdChants(dt) {
+    if (this.state !== "racing" || !this.audio.enabled) return;
+
+    this._cheerTimer -= dt;
+    if (this._cheerTimer <= 0) {
+      const who = this.audio.randomChant();
+      this._flash(who === "Dylan" ? "GO DYLAN!" : "GO CJ!");
+      this._cheerTimer = 9 + Math.random() * 12; // every ~9–21s
+    }
+
+    // Extra cheer when CJ (player) is in a close battle
+    if (this.player && this.raceTime - this._lastPassCheerAt > 14) {
+      const place = this._playerPlace();
+      const near = this.cars.some((c) => {
+        if (c.isPlayer) return false;
+        const d = Math.hypot(c.x - this.player.x, c.y - this.player.y);
+        return d < 10 && Math.abs(c.progress - this.player.progress) < 0.12;
+      });
+      if (near && Math.random() < 0.015) {
+        // Prefer player name when battling; sometimes Dylan if #777 is close
+        const dylanNear = this.cars.some(
+          (c) => c.driver?.number === "777" && Math.hypot(c.x - this.player.x, c.y - this.player.y) < 12
+        );
+        const who = dylanNear && Math.random() < 0.5 ? "Dylan" : "CJ";
+        this.audio.chant(who);
+        this._flash(who === "Dylan" ? "GO DYLAN!" : "GO CJ!");
+        this._lastPassCheerAt = this.raceTime;
+        this._cheerTimer = 8 + Math.random() * 6;
+      } else if (place === 1 && Math.random() < 0.004) {
+        this.audio.chant("CJ");
+        this._flash("GO CJ!");
+        this._lastPassCheerAt = this.raceTime;
+      }
+    }
+  }
+
   _frame(now) {
     if (!this._running) return;
     let dt = (now - this._last) / 1000;
@@ -1844,6 +1890,13 @@ export class RaceSession {
           this.raceTime = 0;
           for (const c of this.cars) c.lapStart = 0;
           if (this.opts.onCountdown) this.opts.onCountdown("GO");
+          // Opening roar
+          setTimeout(() => {
+            if (this.state === "racing" && this.audio.enabled) {
+              this.audio.chant("CJ");
+              this._flash("GO CJ!");
+            }
+          }, 700);
         } else if (this.opts.onCountdown) this.opts.onCountdown(null);
       }
     }
@@ -1855,6 +1908,8 @@ export class RaceSession {
       if (this.state === "racing") this._carCollisions();
       this._updateDust(dt);
     }
+
+    this._updateCrowdChants(dt);
 
     for (let i = 0; i < this.cars.length; i++) {
       if (this.carMeshes[i]) this._syncCarMesh(this.cars[i], this.carMeshes[i]);
