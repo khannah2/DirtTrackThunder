@@ -71,12 +71,96 @@
           <p id="next-event-track" class="muted"></p>
           <p id="next-event-purse" class="money"></p>
           <button id="btn-race" class="btn primary full" type="button">ENTER RACE</button>
+          <button id="btn-h2h" class="btn full" type="button">HEAD TO HEAD</button>
+          <button id="btn-scores" class="btn full" type="button">HIGH SCORES</button>
           <button id="btn-garage" class="btn full" type="button">UPGRADES</button>
           <button id="btn-rivals" class="btn full" type="button">RIVAL FIELD</button>
           <button id="btn-tracks" class="btn full" type="button">TRACK LIST</button>
           <button id="btn-menu" class="btn ghost full" type="button">MAIN MENU</button>
         </div>
       </div>
+    </section>
+
+    <!-- HIGH SCORES -->
+    <section id="screen-scores" class="screen">
+      <header class="topbar">
+        <div>
+          <h2>High Scores</h2>
+          <p id="scores-status" class="muted">Fastest race times</p>
+        </div>
+        <select id="scores-track-filter" class="select"></select>
+      </header>
+      <div class="panel">
+        <ol id="scores-list" class="standings scores-list"></ol>
+      </div>
+      <button id="btn-scores-back" class="btn full" type="button">BACK TO GARAGE</button>
+    </section>
+
+    <!-- HEAD TO HEAD -->
+    <section id="screen-h2h" class="screen">
+      <header class="topbar">
+        <div>
+          <h2>Head to Head</h2>
+          <p class="muted">Create a room · friend joins with code · both race · fastest time wins</p>
+        </div>
+      </header>
+      <div class="hub-grid">
+        <div class="panel">
+          <h3>Host a match</h3>
+          <label class="field">
+            <span class="label">Your name</span>
+            <input id="h2h-host-name" type="text" maxlength="24" placeholder="CJ Permann" />
+          </label>
+          <label class="field">
+            <span class="label">Track</span>
+            <select id="h2h-track" class="select"></select>
+          </label>
+          <label class="field">
+            <span class="label">Laps</span>
+            <select id="h2h-laps" class="select">
+              <option value="5">5 laps</option>
+              <option value="8" selected>8 laps</option>
+              <option value="10">10 laps</option>
+              <option value="12">12 laps</option>
+            </select>
+          </label>
+          <button id="btn-h2h-create" class="btn primary full" type="button">CREATE ROOM</button>
+        </div>
+        <div class="panel">
+          <h3>Join a match</h3>
+          <label class="field">
+            <span class="label">Your name</span>
+            <input id="h2h-guest-name" type="text" maxlength="24" placeholder="Dylan Permann" />
+          </label>
+          <label class="field">
+            <span class="label">Room code</span>
+            <input id="h2h-code" type="text" maxlength="6" placeholder="AB12" class="code-input" />
+          </label>
+          <button id="btn-h2h-join" class="btn primary full" type="button">JOIN ROOM</button>
+        </div>
+      </div>
+      <div id="h2h-lobby" class="panel h2h-lobby hidden">
+        <h3>Lobby · <span id="h2h-lobby-code" class="highlight">----</span></h3>
+        <p id="h2h-lobby-track" class="muted"></p>
+        <div class="h2h-players">
+          <div class="h2h-player">
+            <span class="label">Host</span>
+            <strong id="h2h-host-label">—</strong>
+            <span id="h2h-host-ready" class="badge">…</span>
+          </div>
+          <div class="h2h-vs">VS</div>
+          <div class="h2h-player">
+            <span class="label">Challenger</span>
+            <strong id="h2h-guest-label">Waiting…</strong>
+            <span id="h2h-guest-ready" class="badge">…</span>
+          </div>
+        </div>
+        <p id="h2h-lobby-status" class="highlight center"></p>
+        <button id="btn-h2h-ready" class="btn primary full" type="button">I'M READY</button>
+        <button id="btn-h2h-leave" class="btn ghost full" type="button">LEAVE LOBBY</button>
+      </div>
+      <p id="h2h-error" class="muted center"></p>
+      <button id="btn-h2h-back" class="btn full" type="button">BACK TO GARAGE</button>
     </section>
 
     <!-- TRACK LIST -->

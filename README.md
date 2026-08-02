@@ -12,9 +12,14 @@ First-person dirt **late model** career racer: drive as **CJ Permann #37**, race
 
 Admin: https://app.netlify.com/projects/dirt-track-thunder
 
+**Online features (Netlify Functions + Blobs):**
+- Global **High Scores** board
+- **Head to Head** rooms (create code → friend joins → both race → fastest time wins)
+
 Redeploy from this folder:
 
 ```powershell
+npm install
 netlify deploy --prod --dir .
 ```
 

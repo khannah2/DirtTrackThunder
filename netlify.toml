@@ -1,7 +1,10 @@
-# Optional: also works if you connect this folder to Netlify later
 [build]
   publish = "."
-  command = "echo 'static site — no build'"
+  command = "npm install"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
 
 [[headers]]
   for = "/*"
@@ -13,3 +16,9 @@
   for = "/*.js"
   [headers.values]
     Content-Type = "text/javascript; charset=utf-8"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api?path=:splat"
+  status = 200
+  force = true

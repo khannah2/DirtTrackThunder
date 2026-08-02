@@ -1,0 +1,9 @@
+{
+  "name": "dirt-track-thunder",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dirt Track Thunder — career dirt late model racer",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}
