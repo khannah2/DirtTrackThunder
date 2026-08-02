@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>Dirt Track Thunder — Career</title>
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <!-- MAIN MENU -->
+    <section id="screen-menu" class="screen active">
+      <div class="hero">
+        <p class="eyebrow">Late Model Dirt · Career Mode</p>
+        <h1>DIRT TRACK<br />THUNDER</h1>
+        <p class="sub">CJ Permann #37 · Dylan Permann #777 · Permann Diesel</p>
+        <div class="hero-car">
+          <img src="assets/cars/player-37-pit.jpg" alt="CJ Permann #37 late model" />
+          <p class="hero-caption">You drive · CJ Permann · #37</p>
+        </div>
+        <div class="hero-car secondary-hero">
+          <img src="assets/cars/dylan-777.jpg" alt="Dylan Permann #777 late model" />
+          <p class="hero-caption">Teammate · Dylan Permann · #777</p>
+        </div>
+        <div class="menu-actions">
+          <button id="btn-continue" class="btn primary" type="button">CONTINUE CAREER</button>
+          <button id="btn-new-career" class="btn" type="button">NEW CAREER</button>
+        </div>
+        <p id="menu-save-info" class="muted"></p>
+      </div>
+    </section>
+
+    <!-- CAREER HUB -->
+    <section id="screen-hub" class="screen">
+      <header class="topbar">
+        <div>
+          <h2>Team Garage</h2>
+          <p id="hub-driver" class="muted"></p>
+        </div>
+        <div class="stats-row">
+          <div class="stat"><span class="label">Cash</span><span id="hub-cash">$0</span></div>
+          <div class="stat"><span class="label">Points</span><span id="hub-points">0</span></div>
+          <div class="stat"><span class="label">Round</span><span id="hub-round">1</span></div>
+        </div>
+      </header>
+
+      <div class="hub-grid">
+        <div class="panel car-panel">
+          <img id="hub-car-img" src="assets/cars/player-37-action.jpg" alt="Your car" />
+          <div class="car-meta">
+            <h3 id="hub-car-name">#37 CJ Permann</h3>
+            <p id="hub-car-sponsors" class="muted">Colorado Pawn &amp; Jewelry · Permann Diesel Solutions</p>
+            <div id="hub-power-bars" class="power-bars"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Next Event</h3>
+          <p id="next-event-name" class="highlight"></p>
+          <p id="next-event-desc" class="muted"></p>
+          <p id="next-event-track" class="muted"></p>
+          <p id="next-event-purse" class="money"></p>
+          <button id="btn-race" class="btn primary full" type="button">ENTER RACE</button>
+          <button id="btn-garage" class="btn full" type="button">UPGRADES</button>
+          <button id="btn-rivals" class="btn full" type="button">RIVAL FIELD</button>
+          <button id="btn-tracks" class="btn full" type="button">TRACK LIST</button>
+          <button id="btn-menu" class="btn ghost full" type="button">MAIN MENU</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRACK LIST -->
+    <section id="screen-tracks" class="screen">
+      <header class="topbar">
+        <div>
+          <h2>Season Tracks</h2>
+          <p class="muted">UNOH / NW Ohio circuit · Florida swing</p>
+        </div>
+      </header>
+      <div id="track-list" class="track-list"></div>
+      <button id="btn-tracks-back" class="btn full" type="button">BACK TO GARAGE</button>
+    </section>
+
+    <!-- GARAGE / UPGRADES -->
+    <section id="screen-garage" class="screen">
+      <header class="topbar">
+        <h2>Shop &amp; Upgrades</h2>
+        <div class="stat"><span class="label">Cash</span><span id="garage-cash">$0</span></div>
+      </header>
+      <div id="upgrade-list" class="upgrade-list"></div>
+      <button id="btn-garage-back" class="btn full" type="button">BACK TO GARAGE</button>
+    </section>
+
+    <!-- RIVALS -->
+    <section id="screen-rivals" class="screen">
+      <header class="topbar">
+        <h2>Tonight's Field</h2>
+        <p class="muted">Pick who you want to line up against (5 start with you)</p>
+      </header>
+      <div id="rival-list" class="rival-list"></div>
+      <p class="muted center">Selected: <span id="rival-count">0</span> / 5</p>
+      <button id="btn-rivals-back" class="btn full" type="button">DONE</button>
+    </section>
+
+    <!-- RACE -->
+    <section id="screen-race" class="screen">
+      <div id="race-wrap">
+        <canvas id="game"></canvas>
+        <div id="cockpit-frame" aria-hidden="true"></div>
+        <div id="cockpit-hud">
+          <div class="hud-left">
+            <div><span class="label">POS</span><span id="hud-pos">1/6</span></div>
+            <div><span class="label">LAP</span><span id="hud-lap">1/8</span></div>
+          </div>
+          <div class="hud-center">
+            <div id="hud-tach"><div id="hud-tach-fill"></div></div>
+            <div id="hud-speed">0</div>
+            <div class="label">MPH</div>
+          </div>
+          <div class="hud-right">
+            <div><span class="label">BEST</span><span id="hud-best">--:--.--</span></div>
+            <div><span class="label">$</span><span id="hud-purse">0</span></div>
+          </div>
+        </div>
+        <div id="race-overlay" class="overlay">
+          <div class="panel race-panel">
+            <h2 id="race-title">FEATURE</h2>
+            <p id="race-msg">Photo-real WebGL · first person · dirt late models</p>
+            <ul class="controls">
+              <li class="desktop-only"><kbd>W</kbd>/<kbd>↑</kbd> Throttle · <kbd>S</kbd>/<kbd>↓</kbd> Brake</li>
+              <li class="desktop-only"><kbd>A</kbd><kbd>D</kbd> steer · <kbd>Space</kbd> handbrake · <kbd>C</kbd> look back</li>
+              <li class="mobile-only">Use on-screen pedals &amp; steer pads</li>
+              <li class="mobile-only">Hold GAS · steer with arrows · HB for slides</li>
+            </ul>
+            <button id="btn-start-race" class="btn primary" type="button">GREEN FLAG</button>
+          </div>
+        </div>
+        <div id="countdown" class="hidden"></div>
+        <div id="race-flash" class="hidden"></div>
+
+        <!-- Phone / touch controls (shown on coarse pointers) -->
+        <div id="touch-controls" aria-label="Touch controls">
+          <div class="touch-cluster left">
+            <button type="button" class="touch-btn steer" data-key="left" aria-label="Steer left">◀</button>
+            <button type="button" class="touch-btn steer" data-key="right" aria-label="Steer right">▶</button>
+          </div>
+          <div class="touch-cluster mid">
+            <button type="button" class="touch-btn small" data-key="look" aria-label="Look back">LOOK</button>
+            <button type="button" class="touch-btn small" data-key="handbrake" aria-label="Handbrake">HB</button>
+            <button type="button" class="touch-btn small quit" data-key="quit" aria-label="Quit">QUIT</button>
+          </div>
+          <div class="touch-cluster right">
+            <button type="button" class="touch-btn pedal brake" data-key="brake" aria-label="Brake">BRAKE</button>
+            <button type="button" class="touch-btn pedal gas" data-key="throttle" aria-label="Throttle">GAS</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESULTS -->
+    <section id="screen-results" class="screen">
+      <div class="panel results-panel">
+        <h2 id="results-title">CHECKERED FLAG</h2>
+        <p id="results-place" class="highlight"></p>
+        <div class="results-grid">
+          <div><span class="label">Purse</span><span id="results-purse" class="money"></span></div>
+          <div><span class="label">Points</span><span id="results-points"></span></div>
+          <div><span class="label">Race time</span><span id="results-time"></span></div>
+          <div><span class="label">Best lap</span><span id="results-best"></span></div>
+        </div>
+        <ol id="results-standings" class="standings"></ol>
+        <button id="btn-results-hub" class="btn primary full" type="button">BACK TO GARAGE</button>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
