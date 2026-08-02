@@ -6,28 +6,34 @@ First-person dirt **late model** career racer: drive as **CJ Permann #37**, race
 
 ## Play online (free hosting)
 
-**GitHub Pages** (recommended free host for this static game):
+### Netlify (primary)
 
-After deploy, open:
+**https://dirt-track-thunder.netlify.app**
 
-`https://khannah2.github.io/DirtTrackThunder/`
+Admin: https://app.netlify.com/projects/dirt-track-thunder
 
-### Local
+Redeploy from this folder:
 
-Modules need a local server (not double-click `index.html`):
+```powershell
+netlify deploy --prod --dir .
+```
 
-1. Double-click **`play.bat`**
-2. Open **http://localhost:8765** in Chrome or Edge
+### GitHub Pages (backup)
 
-### Redeploy
+**https://khannah2.github.io/DirtTrackThunder/**
 
-```bash
+Repo: https://github.com/khannah2/DirtTrackThunder
+
+```powershell
 git add -A
 git commit -m "Update game"
 git push
 ```
 
-GitHub Pages updates in about a minute.
+### Local
+
+1. Double-click **`play.bat`**
+2. Open **http://localhost:8765** in Chrome or Edge
 
 ## Features
 
