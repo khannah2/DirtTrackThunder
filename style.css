@@ -435,6 +435,68 @@ h3 { font-size: 1.35rem; color: var(--cream); margin-bottom: 8px; }
   border-color: rgba(220, 80, 60, 0.5);
   color: #f5a89a;
 }
+.touch-btn.tilt-toggle.tilt-on,
+.touch-btn.tilt-toggle.pressed {
+  background: rgba(34, 197, 94, 0.85);
+  border-color: #86efac;
+  color: #fff;
+}
+
+.tilt-status {
+  position: absolute;
+  left: 50%;
+  top: max(56px, calc(env(safe-area-inset-top) + 48px));
+  transform: translateX(-50%);
+  z-index: 6;
+  pointer-events: none;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--gold);
+  text-shadow: 0 1px 4px #000;
+  background: rgba(0,0,0,0.45);
+  padding: 4px 12px;
+  border-radius: 999px;
+  max-width: 90vw;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tilt-status:empty { display: none; }
+
+.tilt-meter {
+  display: none;
+  position: absolute;
+  left: 50%;
+  bottom: max(110px, calc(env(safe-area-inset-bottom) + 100px));
+  transform: translateX(-50%);
+  z-index: 5;
+  width: min(220px, 60vw);
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(240,180,41,0.4);
+  pointer-events: none;
+  overflow: hidden;
+}
+.tilt-meter.on { display: block; }
+.tilt-meter > i {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  width: 12px;
+  margin-left: -6px;
+  left: var(--tilt, 50%);
+  border-radius: 999px;
+  background: var(--gold);
+  box-shadow: 0 0 8px rgba(240,180,41,0.8);
+  transition: left 0.05s linear;
+}
+
+.touch-cluster.left {
+  flex-wrap: wrap;
+  max-width: 160px;
+}
 
 .mobile-only { display: none; }
 .desktop-only { display: list-item; }

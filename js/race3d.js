@@ -890,6 +890,20 @@ export class RaceSession {
     this.dust = null;
     this.composer = null;
     this._disposed = false;
+    // Phone tilt / accelerometer steering
+    this.tilt = {
+      enabled: false,
+      steer: 0, // -1 .. 1
+      pitch: 0, // -1 .. 1 (forward lean)
+      rawSteer: 0,
+      rawPitch: 0,
+      calSteer: 0,
+      calPitch: 0,
+      sensitivity: 1.35,
+      deadzone: 0.08,
+    };
+    this._onOrient = (e) => this._handleOrientation(e);
+    this._onMotion = (e) => this._handleMotion(e);
   }
 
   async start() {
@@ -935,6 +949,7 @@ export class RaceSession {
     window.removeEventListener("resize", this._onResize);
     window.removeEventListener("blur", this._onBlur);
     if (this._touchRoot) this._touchRoot.classList.remove("active");
+    this.disableTilt();
     try {
       this.audio.stopAll();
     } catch (_) {}
@@ -1048,6 +1063,202 @@ export class RaceSession {
           this.onQuit();
         }
       });
+    }
+
+    // Tilt steering toggle + calibrate (needs user gesture on iOS)
+    const tiltBtn = root.querySelector("[data-key='tilt']");
+    if (tiltBtn) {
+      tiltBtn.addEventListener("pointerdown", async (e) => {
+        e.preventDefault();
+        if (this.tilt.enabled) {
+          this.disableTilt();
+          tiltBtn.classList.remove("pressed", "tilt-on");
+          tiltBtn.textContent = "TILT";
+          this._setTiltStatus("Tilt off — use ◀ ▶");
+        } else {
+          const ok = await this.enableTilt();
+          if (ok) {
+            tiltBtn.classList.add("pressed", "tilt-on");
+            tiltBtn.textContent = "TILT ON";
+            this._setTiltStatus("Tilt ON — lean phone to steer");
+          } else {
+            this._setTiltStatus("Tilt blocked — allow motion in browser settings");
+          }
+        }
+      });
+    }
+    const calBtn = root.querySelector("[data-key='cal']");
+    if (calBtn) {
+      calBtn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        this.calibrateTilt();
+        calBtn.classList.add("pressed");
+        setTimeout(() => calBtn.classList.remove("pressed"), 200);
+        this._setTiltStatus("Calibrated — hold phone level, then race");
+      });
+    }
+
+    // Auto-offer tilt on phones
+    if (window.matchMedia("(pointer: coarse)").matches) {
+      this._setTiltStatus("Tap TILT to steer with the phone");
+    }
+  }
+
+  _setTiltStatus(msg) {
+    const el = document.getElementById("tilt-status");
+    if (el) el.textContent = msg || "";
+  }
+
+  async enableTilt() {
+    try {
+      // iOS 13+ requires permission from a user gesture
+      if (typeof DeviceOrientationEvent !== "undefined" &&
+          typeof DeviceOrientationEvent.requestPermission === "function") {
+        const p = await DeviceOrientationEvent.requestPermission();
+        if (p !== "granted") return false;
+      }
+      if (typeof DeviceMotionEvent !== "undefined" &&
+          typeof DeviceMotionEvent.requestPermission === "function") {
+        try {
+          await DeviceMotionEvent.requestPermission();
+        } catch (_) {}
+      }
+
+      window.addEventListener("deviceorientation", this._onOrient, true);
+      window.addEventListener("devicemotion", this._onMotion, true);
+      this.tilt.enabled = true;
+      // Capture neutral after a short settle
+      setTimeout(() => this.calibrateTilt(), 250);
+      return true;
+    } catch (err) {
+      console.warn("Tilt enable failed:", err);
+      return false;
+    }
+  }
+
+  disableTilt() {
+    this.tilt.enabled = false;
+    this.tilt.steer = 0;
+    this.tilt.pitch = 0;
+    window.removeEventListener("deviceorientation", this._onOrient, true);
+    window.removeEventListener("devicemotion", this._onMotion, true);
+  }
+
+  calibrateTilt() {
+    this.tilt.calSteer = this.tilt.rawSteer;
+    this.tilt.calPitch = this.tilt.rawPitch;
+    this.tilt.steer = 0;
+    this.tilt.pitch = 0;
+  }
+
+  _applyTiltAxes(steerDeg, pitchDeg) {
+    this.tilt.rawSteer = steerDeg;
+    this.tilt.rawPitch = pitchDeg;
+    if (!this.tilt.enabled) return;
+
+    let s = (steerDeg - this.tilt.calSteer) / 28; // ~28° = full lock
+    let p = (pitchDeg - this.tilt.calPitch) / 35;
+    s *= this.tilt.sensitivity;
+    p *= this.tilt.sensitivity;
+
+    const dz = this.tilt.deadzone;
+    if (Math.abs(s) < dz) s = 0;
+    else s = Math.sign(s) * ((Math.abs(s) - dz) / (1 - dz));
+    if (Math.abs(p) < dz) p = 0;
+    else p = Math.sign(p) * ((Math.abs(p) - dz) / (1 - dz));
+
+    // Smooth so the car doesn't jitter
+    this.tilt.steer = lerp(this.tilt.steer, clamp(s, -1, 1), 0.35);
+    this.tilt.pitch = lerp(this.tilt.pitch, clamp(p, -1, 1), 0.25);
+  }
+
+  /**
+   * DeviceOrientation: gamma ≈ left/right (portrait), beta ≈ front/back.
+   * In landscape we swap so “wheel lean” still steers left/right.
+   */
+  _handleOrientation(e) {
+    if (e.gamma == null && e.beta == null) return;
+    let gamma = e.gamma ?? 0; // -90..90
+    let beta = e.beta ?? 0; // -180..180
+
+    const type = (screen.orientation && screen.orientation.type) || "";
+    let steerAxis = gamma;
+    let pitchAxis = beta - 45; // neutral-ish when looking slightly down at phone
+
+    if (type.includes("landscape")) {
+      // Phone on its side: beta becomes the main left/right lean
+      // landscape-primary vs secondary flips sign
+      if (type.includes("secondary")) {
+        steerAxis = -(beta - 0);
+        pitchAxis = gamma;
+      } else {
+        steerAxis = beta;
+        pitchAxis = -gamma;
+      }
+    }
+
+    this._applyTiltAxes(steerAxis, pitchAxis);
+  }
+
+  /** Accelerometer fallback / blend when orientation is weak */
+  _handleMotion(e) {
+    if (!this.tilt.enabled) return;
+    const a = e.accelerationIncludingGravity;
+    if (!a || a.x == null) return;
+
+    // Only use motion if orientation hasn't given us signal yet
+    // or as light blend. Prefer orientation when available.
+    if (Math.abs(this.tilt.rawSteer) > 1) return;
+
+    const type = (screen.orientation && screen.orientation.type) || "";
+    let ax = a.x;
+    let ay = a.y;
+    if (type.includes("landscape")) {
+      // swap for landscape hold
+      ax = type.includes("secondary") ? -a.y : a.y;
+      ay = -a.x;
+    }
+    // Convert g-force (~ -10..10) into degree-like units for _applyTiltAxes
+    this._applyTiltAxes(ax * 6, ay * 4);
+  }
+
+  /** Player input: keys/buttons + optional analog tilt */
+  _readPlayerControls(car) {
+    car.throttle = this._pressed("KeyW") || this._pressed("ArrowUp") ? 1 : 0;
+    car.brake = this._pressed("KeyS") || this._pressed("ArrowDown") ? 1 : 0;
+    car.handbrake = this._pressed("Space") ? 1 : 0;
+
+    let steer = 0;
+    if (this._pressed("KeyA") || this._pressed("ArrowLeft")) steer -= 1;
+    if (this._pressed("KeyD") || this._pressed("ArrowRight")) steer += 1;
+
+    if (this.tilt.enabled) {
+      // Buttons override when held; otherwise full analog tilt
+      if (steer === 0) {
+        steer = this.tilt.steer;
+      } else {
+        // slight blend so you can fine-tune with tilt while holding a pad
+        steer = clamp(steer + this.tilt.steer * 0.25, -1, 1);
+      }
+      // Optional: lean phone forward for a bit of gas if not touching pedals
+      if (!car.throttle && !car.brake && this.tilt.pitch > 0.35) {
+        car.throttle = clamp((this.tilt.pitch - 0.35) / 0.65, 0, 0.85);
+      }
+      if (!car.brake && !this._pressed("KeyW") && this.tilt.pitch < -0.45) {
+        car.brake = clamp((-this.tilt.pitch - 0.45) / 0.55, 0, 0.7);
+      }
+    }
+
+    car.steer = clamp(steer, -1, 1);
+
+    // Tilt indicator on HUD
+    const ind = document.getElementById("tilt-meter");
+    if (ind && this.tilt.enabled) {
+      const pct = 50 + this.tilt.steer * 50;
+      ind.style.setProperty("--tilt", `${clamp(pct, 0, 100)}%`);
+      ind.classList.add("on");
+    } else if (ind) {
+      ind.classList.remove("on");
     }
   }
 
@@ -1342,12 +1553,7 @@ export class RaceSession {
     }
 
     if (car.isPlayer && this.state === "racing") {
-      car.throttle = this._pressed("KeyW") || this._pressed("ArrowUp") ? 1 : 0;
-      car.brake = this._pressed("KeyS") || this._pressed("ArrowDown") ? 1 : 0;
-      car.steer = 0;
-      if (this._pressed("KeyA") || this._pressed("ArrowLeft")) car.steer -= 1;
-      if (this._pressed("KeyD") || this._pressed("ArrowRight")) car.steer += 1;
-      car.handbrake = this._pressed("Space") ? 1 : 0;
+      this._readPlayerControls(car);
     } else if (!car.isPlayer && this.state === "racing") {
       this._ai(car);
     } else {

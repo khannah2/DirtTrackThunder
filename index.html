@@ -139,8 +139,9 @@
             <ul class="controls">
               <li class="desktop-only"><kbd>W</kbd>/<kbd>↑</kbd> Throttle · <kbd>S</kbd>/<kbd>↓</kbd> Brake</li>
               <li class="desktop-only"><kbd>A</kbd><kbd>D</kbd> steer · <kbd>Space</kbd> handbrake · <kbd>C</kbd> look back</li>
-              <li class="mobile-only">Use on-screen pedals &amp; steer pads</li>
-              <li class="mobile-only">Hold GAS · steer with arrows · HB for slides</li>
+              <li class="mobile-only">Tap <strong>TILT</strong> — lean phone left/right to steer</li>
+              <li class="mobile-only">Tap <strong>CAL</strong> while holding the phone level</li>
+              <li class="mobile-only">GAS / BRAKE pedals · HB for slides</li>
             </ul>
             <button id="btn-start-race" class="btn primary" type="button">GREEN FLAG</button>
           </div>
@@ -148,9 +149,14 @@
         <div id="countdown" class="hidden"></div>
         <div id="race-flash" class="hidden"></div>
 
+        <div id="tilt-status" class="tilt-status" aria-live="polite"></div>
+        <div id="tilt-meter" class="tilt-meter" aria-hidden="true"><i></i></div>
+
         <!-- Phone / touch controls (shown on coarse pointers) -->
         <div id="touch-controls" aria-label="Touch controls">
           <div class="touch-cluster left">
+            <button type="button" class="touch-btn small tilt-toggle" data-key="tilt" aria-label="Toggle tilt steering">TILT</button>
+            <button type="button" class="touch-btn small" data-key="cal" aria-label="Calibrate tilt">CAL</button>
             <button type="button" class="touch-btn steer" data-key="left" aria-label="Steer left">◀</button>
             <button type="button" class="touch-btn steer" data-key="right" aria-label="Steer right">▶</button>
           </div>
