@@ -366,10 +366,13 @@ h3 { font-size: 1.35rem; color: var(--cream); margin-bottom: 8px; }
   z-index: 6;
   padding: 12px max(12px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
   pointer-events: none;
-  justify-content: space-between;
-  align-items: flex-end;
+  flex-direction: column;
+  justify-content: flex-end;
   gap: 10px;
-  background: linear-gradient(transparent, rgba(0,0,0,0.4));
+  background: linear-gradient(transparent, rgba(0,0,0,0.35));
+}
+#touch-controls.active {
+  display: flex;
 }
 #touch-controls .touch-cluster {
   display: flex;
@@ -385,7 +388,45 @@ h3 { font-size: 1.35rem; color: var(--cream); margin-bottom: 8px; }
 #touch-controls .touch-cluster.right {
   flex-direction: column;
   gap: 10px;
+  align-items: stretch;
 }
+
+/* Hideable extras row */
+.touch-extras {
+  display: none;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 10px;
+  width: 100%;
+  pointer-events: none;
+  animation: touchExtrasIn 0.18s ease;
+}
+#touch-controls.extras-open .touch-extras {
+  display: flex;
+}
+.touch-extras .touch-cluster {
+  pointer-events: auto;
+}
+@keyframes touchExtrasIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Always-on primary row: toggle left, HB+GAS right edge */
+.touch-primary {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+  pointer-events: none;
+}
+.touch-primary > * {
+  pointer-events: auto;
+}
+.touch-primary .touch-cluster.right {
+  margin-left: auto;
+}
+
 .touch-btn {
   -webkit-user-select: none;
   user-select: none;
@@ -424,6 +465,16 @@ h3 { font-size: 1.35rem; color: var(--cream); margin-bottom: 8px; }
 .touch-btn.pedal.gas.pressed {
   background: rgba(60, 160, 50, 0.9);
 }
+.touch-btn.pedal.handbrake {
+  height: 56px;
+  background: rgba(90, 40, 20, 0.82);
+  border-color: rgba(240, 120, 60, 0.65);
+  color: #ffd4b0;
+}
+.touch-btn.pedal.handbrake.pressed {
+  background: rgba(200, 70, 20, 0.95);
+  border-color: #ffb070;
+}
 .touch-btn.small {
   min-width: 64px;
   height: 40px;
@@ -434,6 +485,17 @@ h3 { font-size: 1.35rem; color: var(--cream); margin-bottom: 8px; }
 .touch-btn.quit {
   border-color: rgba(220, 80, 60, 0.5);
   color: #f5a89a;
+}
+.touch-btn.touch-hide-toggle {
+  min-width: 48px;
+  height: 48px;
+  font-size: 1.2rem;
+  letter-spacing: 0;
+  opacity: 0.9;
+}
+#touch-controls.extras-open .touch-hide-toggle {
+  background: rgba(240, 180, 41, 0.35);
+  border-color: var(--gold);
 }
 .touch-btn.tilt-toggle.tilt-on,
 .touch-btn.tilt-toggle.pressed {
@@ -765,8 +827,12 @@ kbd {
     display: flex;
     pointer-events: none;
   }
-  #touch-controls.active .touch-cluster {
+  #touch-controls.active .touch-cluster,
+  #touch-controls.active .touch-primary > * {
     pointer-events: auto;
+  }
+  .touch-btn.pedal.handbrake {
+    width: 88px;
   }
 
   #cockpit-frame::before,

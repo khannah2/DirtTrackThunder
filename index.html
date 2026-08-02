@@ -223,9 +223,9 @@
             <ul class="controls">
               <li class="desktop-only"><kbd>W</kbd>/<kbd>↑</kbd> Throttle · <kbd>S</kbd>/<kbd>↓</kbd> Brake</li>
               <li class="desktop-only"><kbd>A</kbd><kbd>D</kbd> steer · <kbd>Space</kbd> handbrake · <kbd>C</kbd> look back</li>
-              <li class="mobile-only"><strong>Android:</strong> tilt usually turns on automatically — lean L/R to steer</li>
-              <li class="mobile-only"><strong>iPhone:</strong> tap <strong>TILT</strong> → Allow motion access</li>
-              <li class="mobile-only">Tap <strong>CAL</strong> while holding the phone level · GAS/BRAKE pedals still work</li>
+              <li class="mobile-only"><strong>GAS</strong> + <strong>HB</strong> on the right · tilt to steer</li>
+              <li class="mobile-only">Tap <strong>•••</strong> for TILT / CAL / LOOK / QUIT / steer pads</li>
+              <li class="mobile-only"><strong>iPhone:</strong> open ••• → TILT → Allow motion</li>
             </ul>
             <button id="btn-start-race" class="btn primary" type="button">GREEN FLAG</button>
           </div>
@@ -238,20 +238,27 @@
 
         <!-- Phone / touch controls (shown on coarse pointers) -->
         <div id="touch-controls" aria-label="Touch controls">
-          <div class="touch-cluster left">
-            <button type="button" class="touch-btn small tilt-toggle" data-key="tilt" aria-label="Toggle tilt steering">TILT</button>
-            <button type="button" class="touch-btn small" data-key="cal" aria-label="Calibrate tilt">CAL</button>
-            <button type="button" class="touch-btn steer" data-key="left" aria-label="Steer left">◀</button>
-            <button type="button" class="touch-btn steer" data-key="right" aria-label="Steer right">▶</button>
+          <!-- Extra controls (hideable) -->
+          <div class="touch-extras" id="touch-extras">
+            <div class="touch-cluster left">
+              <button type="button" class="touch-btn small tilt-toggle" data-key="tilt" aria-label="Toggle tilt steering">TILT</button>
+              <button type="button" class="touch-btn small" data-key="cal" aria-label="Calibrate tilt">CAL</button>
+              <button type="button" class="touch-btn steer" data-key="left" aria-label="Steer left">◀</button>
+              <button type="button" class="touch-btn steer" data-key="right" aria-label="Steer right">▶</button>
+            </div>
+            <div class="touch-cluster mid">
+              <button type="button" class="touch-btn small" data-key="look" aria-label="Look back">LOOK</button>
+              <button type="button" class="touch-btn small quit" data-key="quit" aria-label="Quit">QUIT</button>
+            </div>
           </div>
-          <div class="touch-cluster mid">
-            <button type="button" class="touch-btn small" data-key="look" aria-label="Look back">LOOK</button>
-            <button type="button" class="touch-btn small" data-key="handbrake" aria-label="Handbrake">HB</button>
-            <button type="button" class="touch-btn small quit" data-key="quit" aria-label="Quit">QUIT</button>
-          </div>
-          <div class="touch-cluster right">
-            <button type="button" class="touch-btn pedal brake" data-key="brake" aria-label="Brake">BRAKE</button>
-            <button type="button" class="touch-btn pedal gas" data-key="throttle" aria-label="Throttle">GAS</button>
+
+          <!-- Always-on primary: hide toggle + right-edge HB + GAS -->
+          <div class="touch-primary">
+            <button type="button" class="touch-btn small touch-hide-toggle" id="btn-touch-hide" aria-label="Show or hide extra controls" aria-expanded="false">•••</button>
+            <div class="touch-cluster right">
+              <button type="button" class="touch-btn pedal handbrake" data-key="handbrake" aria-label="Handbrake">HB</button>
+              <button type="button" class="touch-btn pedal gas" data-key="throttle" aria-label="Throttle">GAS</button>
+            </div>
           </div>
         </div>
       </div>

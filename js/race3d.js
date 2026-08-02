@@ -1055,7 +1055,6 @@ export class RaceSession {
     };
 
     bind(root.querySelector("[data-key='throttle']"), "KeyW");
-    bind(root.querySelector("[data-key='brake']"), "KeyS");
     bind(root.querySelector("[data-key='left']"), "KeyA");
     bind(root.querySelector("[data-key='right']"), "KeyD");
     bind(root.querySelector("[data-key='handbrake']"), "Space");
@@ -1069,6 +1068,21 @@ export class RaceSession {
           this.destroy();
           this.onQuit();
         }
+      });
+    }
+
+    // Hide / show extra controls (steer, tilt, look, quit)
+    const hideBtn = root.querySelector("#btn-touch-hide") || document.getElementById("btn-touch-hide");
+    if (hideBtn) {
+      // Start collapsed for a cleaner race view
+      root.classList.remove("extras-open");
+      hideBtn.setAttribute("aria-expanded", "false");
+      hideBtn.textContent = "•••";
+      hideBtn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        const open = root.classList.toggle("extras-open");
+        hideBtn.setAttribute("aria-expanded", open ? "true" : "false");
+        hideBtn.textContent = open ? "✕" : "•••";
       });
     }
 
