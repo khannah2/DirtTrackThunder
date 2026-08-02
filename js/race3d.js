@@ -1098,9 +1098,29 @@ export class RaceSession {
       });
     }
 
-    // Auto-offer tilt on phones
+    // Auto-offer tilt on phones (Android has no permission prompt; iOS needs a tap)
     if (window.matchMedia("(pointer: coarse)").matches) {
-      this._setTiltStatus("Tap TILT to steer with the phone");
+      const needsPerm =
+        typeof DeviceOrientationEvent !== "undefined" &&
+        typeof DeviceOrientationEvent.requestPermission === "function";
+      if (needsPerm) {
+        this._setTiltStatus("iPhone: tap TILT and Allow motion access");
+      } else {
+        this._setTiltStatus("Android: tap TILT (or wait) — lean to steer");
+        // Auto-enable on Android/Chrome — no user permission API required
+        setTimeout(() => {
+          if (this._disposed || this.tilt.enabled) return;
+          this.enableTilt().then((ok) => {
+            if (!ok) return;
+            const tiltBtn = root.querySelector("[data-key='tilt']");
+            if (tiltBtn) {
+              tiltBtn.classList.add("pressed", "tilt-on");
+              tiltBtn.textContent = "TILT ON";
+            }
+            this._setTiltStatus("Tilt ON — lean L/R to steer · tap CAL if needed");
+          });
+        }, 400);
+      }
     }
   }
 
@@ -1178,8 +1198,9 @@ export class RaceSession {
    */
   _handleOrientation(e) {
     if (e.gamma == null && e.beta == null) return;
-    let gamma = e.gamma ?? 0; // -90..90
-    let beta = e.beta ?? 0; // -180..180
+    this._lastOrientAt = performance.now();
+    const gamma = e.gamma ?? 0; // -90..90
+    const beta = e.beta ?? 0; // -180..180
 
     const type = (screen.orientation && screen.orientation.type) || "";
     let steerAxis = gamma;
@@ -1187,9 +1208,8 @@ export class RaceSession {
 
     if (type.includes("landscape")) {
       // Phone on its side: beta becomes the main left/right lean
-      // landscape-primary vs secondary flips sign
       if (type.includes("secondary")) {
-        steerAxis = -(beta - 0);
+        steerAxis = -beta;
         pitchAxis = gamma;
       } else {
         steerAxis = beta;
@@ -1200,26 +1220,31 @@ export class RaceSession {
     this._applyTiltAxes(steerAxis, pitchAxis);
   }
 
-  /** Accelerometer fallback / blend when orientation is weak */
+  /**
+   * Accelerometer (DeviceMotion) — primary path on many Android phones
+   * when deviceorientation is throttled or missing.
+   */
   _handleMotion(e) {
     if (!this.tilt.enabled) return;
     const a = e.accelerationIncludingGravity;
-    if (!a || a.x == null) return;
+    if (!a || (a.x == null && a.y == null)) return;
 
-    // Only use motion if orientation hasn't given us signal yet
-    // or as light blend. Prefer orientation when available.
-    if (Math.abs(this.tilt.rawSteer) > 1) return;
+    // Prefer fresh orientation if it's actually moving; else use accel
+    const orientStrong = Math.abs(this.tilt.rawSteer - this.tilt.calSteer) > 2.5;
+    if (orientStrong && this._lastOrientAt && performance.now() - this._lastOrientAt < 120) {
+      return;
+    }
 
     const type = (screen.orientation && screen.orientation.type) || "";
-    let ax = a.x;
-    let ay = a.y;
+    let ax = a.x ?? 0;
+    let ay = a.y ?? 0;
+    // Android portrait: x = left/right. Landscape: y becomes left/right.
     if (type.includes("landscape")) {
-      // swap for landscape hold
-      ax = type.includes("secondary") ? -a.y : a.y;
-      ay = -a.x;
+      ax = type.includes("secondary") ? -(a.y ?? 0) : (a.y ?? 0);
+      ay = -(a.x ?? 0);
     }
-    // Convert g-force (~ -10..10) into degree-like units for _applyTiltAxes
-    this._applyTiltAxes(ax * 6, ay * 4);
+    // g-forces → pseudo-degrees for shared apply path
+    this._applyTiltAxes(ax * 7, ay * 5);
   }
 
   /** Player input: keys/buttons + optional analog tilt */
